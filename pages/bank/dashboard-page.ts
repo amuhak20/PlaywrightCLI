@@ -3,10 +3,12 @@ import { expect, type Locator, type Page } from '@playwright/test';
 export class DashboardPage {
   private readonly mainNavigation: Locator;
   private readonly totalNetWorthLabelLocator: Locator;
+  private readonly logoutButton: Locator;
 
   constructor(private readonly page: Page) {
     this.mainNavigation = page.getByRole('navigation', { name: 'Main navigation' });
     this.totalNetWorthLabelLocator = page.getByText('Total Net Worth', { exact: true });
+    this.logoutButton = page.getByRole('button', { name: 'Logout' });
   }
 
   async expectLoaded(): Promise<void> {
@@ -23,6 +25,18 @@ export class DashboardPage {
 
   accountSummary(accountCount: number): Locator {
     return this.page.getByText(`Across ${accountCount} accounts`, { exact: true });
+  }
+
+  quickAction(label: string): Locator {
+    return this.page.getByRole('link').filter({ hasText: label }).first();
+  }
+
+  get recentTransactions(): Locator {
+    return this.page.getByRole('table', { name: 'Recent transactions' });
+  }
+
+  async logout(): Promise<void> {
+    await this.logoutButton.click();
   }
 
   get totalNetWorthLabel(): Locator {
