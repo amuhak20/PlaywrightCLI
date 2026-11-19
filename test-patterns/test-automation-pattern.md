@@ -11,6 +11,9 @@ pages/
   bank/
     login-page.ts
     dashboard-page.ts
+fixtures/
+  bank/
+    fixtures.ts
 tests/
   bank/
     login.spec.ts
@@ -61,17 +64,55 @@ export class LoginPage {
 - Keep test data and credentials out of page objects; supply them to test actions or fixtures.
 
 ```ts
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../../fixtures/bank/fixtures';
+import { standardUser } from '../test-credentials';
+
+test('signs in with valid credentials', async ({ loginPage, dashboardPage }) => {
+  await loginPage.expectSignInPage();
+  await loginPage.signIn(standardUser.username, standardUser.password);
+
+  await expect(dashboardPage.signedInUser(standardUser.username)).toBeVisible();
+});
+```
+
+## Fixture standards
+
+- Store reusable custom Playwright fixtures in `fixtures/`, grouped by feature or area. Specs should import the extended `test` from the appropriate fixture module.
+- Extend Playwright's base `test` with `test.extend<Fixtures>()` and define a TypeScript type for the fixtures it provides. Export the extended `test` so multiple specs can share the same fixtures.
+- Compose page objects from Playwright's built-in `page` fixture. Keep each fixture focused and use fixture dependencies rather than creating separate browser pages or contexts manually.
+- Override the `page` fixture to perform common navigation or setup once when all tests in that fixture group need the same starting state. Tests should rely on that setup rather than repeat it.
+- Fixtures are on-demand and test-scoped by default. Keep test state isolated; use worker-scoped fixtures only for resources intentionally shared by tests in the same worker.
+- For fixtures that own resources, put setup before `await use(value)` and required teardown after it, in the same fixture. Prefer fixtures over paired hooks when setup and cleanup belong together.
+- Playwright manages the built-in `page`, `context`, and `browser` lifecycles. Do not close the shared `browser` from a test; use `context` for test-scoped browser cleanup when explicit early closure is required.
+
+```ts
+import { test as base } from '@playwright/test';
+import { DashboardPage } from '../../pages/bank/dashboard-page';
 import { LoginPage } from '../../pages/bank/login-page';
+export { expect } from '@playwright/test';
 
-test('signs in with valid credentials', async ({ page }) => {
-  const loginPage = new LoginPage(page);
+type BankFixtures = {
+  loginPage: LoginPage;
+  dashboardPage: DashboardPage;
+  closeBrowser: () => Promise<void>;
+};
 
-  await page.goto('/bank/login');
-  await loginPage.signIn('standard-user', 'example-password');
-
-  await expect(page).toHaveURL(/\/bank\/dashboard$/);
+export const test = base.extend<BankFixtures>({
+  page: async ({ page }, use) => {
+    await page.goto('/bank/login');
+    await use(page);
+  },
+  loginPage: async ({ page }, use) => {
+    await use(new LoginPage(page));
+  },
+  dashboardPage: async ({ page }, use) => {
+    await use(new DashboardPage(page));
+  },
+  closeBrowser: async ({ context }, use) => {
+    await use(() => context.close());
+  },
 });
 ```
 
 For the rationale and a fuller implementation example, see the official [Playwright Page Object Models guide](https://playwright.dev/docs/pom).
+For fixture design and lifecycle details, see the official [Playwright fixtures guide](https://playwright.dev/docs/test-fixtures).

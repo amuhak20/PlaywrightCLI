@@ -1,6 +1,5 @@
 // spec: specs/bank-dashboard.plan.md
-import { expect } from '@playwright/test';
-import { test } from './fixtures';
+import { expect, test } from '../../fixtures/bank/fixtures';
 import { standardUser } from '../test-credentials';
 
 test.afterEach(async ({ closeBrowser }) => {
@@ -8,7 +7,6 @@ test.afterEach(async ({ closeBrowser }) => {
 });
 
 test('shows total net worth after signing in', async ({ loginPage, dashboardPage }) => {
-  await loginPage.goto();
   await loginPage.expectSignInPage();
 
   await loginPage.signIn(standardUser.username, standardUser.password);
