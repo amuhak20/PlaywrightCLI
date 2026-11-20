@@ -45,3 +45,7 @@ SecureBank lets a user sign in and review a financial overview on the dashboard.
     - expect: The summary states `Across 2 accounts`.
 
 **Observed on:** 2026-11-18 using playwright-cli.
+
+## Pipeline Context
+
+The [Playwright test pipeline requirements](./Engineering/pipelines.md) apply to this suite. The pipeline runs the tests under `tests` with `npm test` and publishes the HTML report and test-result artifacts.
